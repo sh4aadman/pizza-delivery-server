@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 require("dotenv").config();
 const app = express();
@@ -30,17 +30,30 @@ async function run() {
     const orderCollection = client
       .db("pizza-delivery-app")
       .collection("orders");
-    const deliveries = client.db("pizza-delivery-app").collection("deliveries");
 
+    app.get("/orders", async (req, res) => {
+      const cursor = orderCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+    
     app.post("/orders", async (req, res) => {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
       res.send(result);
     });
 
-    app.post("/deliveries", async (req, res) => {
+    app.patch("/deliveries/:orderId", async (req, res) => {
       const deliveryAddress = req.body;
-      const result = await deliveries.insertOne(deliveryAddress);
+      const orderId = req.params.orderId;
+      const filter = { _id: new ObjectId(orderId) };
+      const place = deliveryAddress.placeToDeliver;
+      const newOrder = {
+        $set: {
+          place,
+        },
+      };
+      const result = await orderCollection.updateOne(filter, newOrder);
       res.send(result);
     });
   } finally {
@@ -48,14 +61,6 @@ async function run() {
   }
 }
 run().catch(console.dir);
-
-app.get("/", (req, res) => {
-  res.send("Hello world Again!");
-});
-
-app.get("/login", (req, res) => {
-  res.send("Hello user, login!");
-});
 
 app.listen(port, () => {
   console.log(`Server is running on ${port}`);
