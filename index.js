@@ -35,8 +35,8 @@ async function run() {
       const cursor = orderCollection.find();
       const result = await cursor.toArray();
       res.send(result);
-    })
-    
+    });
+
     app.post("/orders", async (req, res) => {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
@@ -51,6 +51,26 @@ async function run() {
       const newOrder = {
         $set: {
           place,
+        },
+      };
+      const result = await orderCollection.updateOne(filter, newOrder);
+      res.send(result);
+    });
+
+    app.get("/review-orders", async (req, res) => {
+      const cursor = orderCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.patch("/review-orders/:orderId", async (req, res) => {
+      const newStatus = req.body;
+      const orderId = req.params.orderId;
+      const filter = { _id: new ObjectId(orderId) };
+      const status = newStatus.status;
+      const newOrder = {
+        $set: {
+          status,
         },
       };
       const result = await orderCollection.updateOne(filter, newOrder);
